@@ -54,7 +54,7 @@
       });
 
       const data = await res.json();
-      console.log(data)
+      
       if (data.error) {
         //  Server returned an error
         resultDiv.innerHTML = `<span style="color:red;">Error: ${data.error}</span>`;
