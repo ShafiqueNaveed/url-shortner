@@ -3,8 +3,8 @@ const {Schema} = require("mongoose")
 
 const urlSchema = new Schema({
     long: {
-        type : String,
-        required : true
+        type: String,
+        required: true
     },
     short: {
         type: String

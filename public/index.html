@@ -28,16 +28,25 @@
   </style>
 </head>
 <body>
+
   <h2>🔗 URL Shortener</h2>
   <input type="text" id="longUrl" placeholder="Enter your long URL" />
   <button onclick="shorten()">Shorten</button>
   <p id="result"></p>
 
   <script>
-    async function shorten() {
-      const long = document.getElementById("longUrl").value;
-      if (!long) return alert("Please enter a URL!");
+  async function shorten() {
 
+    const long = document.getElementById("longUrl").value;
+    const resultDiv = document.getElementById("result");
+    resultDiv.innerHTML = ""; // clear old result
+
+    if (!long) {
+      alert("Please enter a URL!");
+      return;
+    }
+
+    try {
       const res = await fetch("/url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,12 +54,26 @@
       });
 
       const data = await res.json();
-      document.getElementById("result").innerHTML = `
-        Short URL: <a href="/url?short=${data.short}" target="_blank">
-          ${window.location.origin}/url?short=${data.short}
-        </a>
-      `;
+      console.log(data)
+      if (data.error) {
+        //  Server returned an error
+        resultDiv.innerHTML = `<span style="color:red;">Error: ${data.error}</span>`;
+      } else {
+        //  Server returned a valid short URL
+        resultDiv.innerHTML = `
+          Short URL: <a href="/url?short=${data.short}" target="_blank">
+            ${window.location.origin}/url?short=${data.short}
+          </a>
+        `;
+      }
+
+    } catch (err) {
+      // In case the fetch itself fails (server down, etc.)
+      resultDiv.innerHTML = `<span style="color:red;">Error: Unable to connect to the server.</span>`;
     }
-  </script>
+  }
+</script>
+
 </body>
+
 </html>

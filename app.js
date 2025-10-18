@@ -4,7 +4,7 @@ dotenv.config()
 require("./mongoose")
 const generateShortId = require("./shorturlgenerator/shorturlgenerator")
 const {URL} = require("./models/url")
-
+const validUrl = require("valid-url")
 
 const app = express()
 app.use(express.json())
@@ -19,7 +19,9 @@ app.post("/url" , async (req , res)=>{
         if(preexits){
             return res.status(201).send(preexits)
         }else{
-            var url = new URL(req.body)
+            var incomingURL = req.body
+            if(!validUrl.isUri(incomingURL)){ return res.send({"error" : "Invalid URL"})}
+            var url = new URL(incomingURL)
             url.short = generateShortId()
         }
         
@@ -30,19 +32,38 @@ app.post("/url" , async (req , res)=>{
     }
 })
 
-app.get("/url" , async (req , res)=>{
-    const entry = await URL.findOne({short : req.query.short})
-    if(!entry) return res.status(404).send("URL not Found")
+
+app.get("/url", async (req, res) => {
+  try {
+    const entry = await URL.findOne({ short: req.query.short });
+
+    if (!entry) {
+      return res.status(404).json({ error: "Short URL not found" });
+    }
 
     let redirectUrl = entry.long;
-    
-    if (!redirectUrl.startsWith("http://") && !redirectUrl.startsWith("https://")) {
+
+    // Ensure URL has http/https prefix
+    if (
+      !redirectUrl.startsWith("http://") &&
+      !redirectUrl.startsWith("https://")
+    ) {
       redirectUrl = "https://" + redirectUrl;
     }
 
+    // Check if it's a valid URL
+    if (!validUrl.isUri(redirectUrl)) {
+      return res.status(400).json({ error: "Invalid original URL" });
+    }
+
+    // Redirect to valid URL
     res.redirect(redirectUrl);
-    
-})
+
+  } catch (error) {
+    console.error("Error in redirect route:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 
 app.listen(PORT , ()=>{
